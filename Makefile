@@ -1,5 +1,4 @@
-
-PILOT_NAME = AcTeamMobile
+PILOTS = AcTeamMobileFaboobs AcTeamElMobile AcTeamElMobileVroum
 
 CC = gcc
 CFLAGS = -Wall -Wextra -ansi -pedantic -Wpedantic -g
@@ -14,21 +13,20 @@ endif
 
 DRIVERS_PATH = ../drivers
 
-all: $(PILOT_NAME)
+all: $(PILOTS)
 
-install: $(DRIVERS_PATH)/$(PILOT_NAME)
+install: $(PILOTS)
+	cp $(PILOTS) $(DRIVERS_PATH)
 
 try: install
 	cd .. ; ./GrandPrix
 
-$(DRIVERS_PATH)/$(PILOT_NAME): $(PILOT_NAME)
-	cp $(PILOT_NAME) $(DRIVERS_PATH)
-
-$(PILOT_NAME): $(PILOT_NAME).c
+# Règle générique pour compiler chaque pilote à partir de son fichier .c
+%: %.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 distclean: clean
-	rm -f $(PILOT_NAME)
+	rm -f $(PILOTS)
 
 clean:
 	rm -f *~ *.o
