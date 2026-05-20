@@ -30,6 +30,7 @@ int gasConsumption(int accX, int accY, int speedX, int speedY, int inSand)
 
 int main()
 {
+  //Declarations variables
   int row;
   int width, height;
   int gasLevel;
@@ -40,8 +41,8 @@ int main()
   char action[100];
   char line_buffer[MAX_LINE_LENGTH];
 
-  boosts = boosts;                       /* Prevent warning "unused variable" */
-  fgets(line_buffer, MAX_LINE_LENGTH, stdin);      /* Read gas level at Start */
+  //Retreive map infos
+  fgets(line_buffer, MAX_LINE_LENGTH, stdin);
   sscanf(line_buffer, "%d %d %d", &width, &height, &gasLevel);
   fprintf(stderr, "=== >Map< ===\n");
   fprintf(stderr, "Size %d x %d\n", width, height);
@@ -51,6 +52,7 @@ int main()
     fputs(line_buffer, stderr);
   }
   fflush(stderr);
+
   fprintf(stderr, "\n=== Race start ===\n");
   while (!feof(stdin)) {
     int myX, myY, secondX, secondY, thirdX, thirdY;
