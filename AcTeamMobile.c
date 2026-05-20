@@ -73,12 +73,6 @@ int main()
     fflush(stdout);                           /* CAUTION : This is necessary  */
     fprintf(stderr, "    Action: %s   Gas remaining: %d\n", action, gasLevel);
     fflush(stderr);
-    if (0 && round > 4) { /* (DISABLED) Force a segfault for testing purpose */
-      int * p = NULL;
-      fprintf(stderr, "Good Bye!\n");
-      fflush(stderr);
-      *p = 0;
-    }
   }
 
   return EXIT_SUCCESS;

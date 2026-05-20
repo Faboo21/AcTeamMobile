@@ -1,0 +1,22 @@
+Setup :
+Dl archive
+Decrompresser Archive
+
+sudo apt install qmake  #dnf pour fedora
+cd GrandPrix2024_4.0.4
+qmake
+make
+
+git clone git@github.com:Faboo21/AcTeamMobile.git
+
+make -C ./AcTeamMobile install
+make -C ./test_pilot install
+./GrandPrix
+
+
+Pour clean :
+make -C ./AcTeamMobile distclean
+
+
+Pour compiler avec l'affichage des erreurs !!!! Desactiver au rendu car ralentit
+make SANITIZE=on -C ./AcTeamMobile install
