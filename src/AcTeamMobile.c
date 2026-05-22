@@ -40,9 +40,7 @@ int main() {
     for (row = 0; row < height; ++row) {
         map[row] = (char*)malloc(MAX_LINE_LENGTH * sizeof(char));
         fgets(map[row], MAX_LINE_LENGTH, stdin);
-        fputs(map[row], stderr);
     }
-    fflush(stderr);
 
     heatmap = (int**)malloc(height * sizeof(int*));
     for (row = 0; row < height; ++row) {

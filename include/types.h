@@ -1,7 +1,7 @@
 /**
  * @file types.h
  * @brief Définitions des constantes et structures de données globales.
- * @author AcTeamMobile
+ * @author Fabien Leroy - Eliot Petrus
  */
 #ifndef TYPES_H
 #define TYPES_H

@@ -9,7 +9,7 @@
 
 /**
  * @brief Calcule le coût en carburant d'une action spécifique.
- * * @param ax Accélération en X.
+ * @param ax Accélération en X.
  * @param ay Accélération en Y.
  * @param vx Vitesse actuelle en X.
  * @param vy Vitesse actuelle en Y.
@@ -20,7 +20,7 @@ int calculateGasCost(int ax, int ay, int vx, int vy, char target_terrain);
 
 /**
  * @brief Génère une Heatmap (carte des distances) par parcours en largeur (BFS).
- * * @param map Le circuit sous forme de grille de caractères.
+ * @param map Le circuit sous forme de grille de caractères.
  * @param width Largeur de la carte.
  * @param height Hauteur de la carte.
  * @param heatmap Tableau 2D d'entiers à remplir avec les coûts de distance.
@@ -29,7 +29,7 @@ void buildHeatmap(char** map, int width, int height, int** heatmap);
 
 /**
  * @brief Détermine tous les mouvements légaux à partir d'un état donné.
- * * @param current État actuel du véhicule.
+ * @param current État actuel du véhicule.
  * @param map La grille du circuit.
  * @param width Largeur de la carte.
  * @param height Hauteur de la carte.
@@ -46,7 +46,7 @@ int getValidMoves(CarState current, char** map, int width, int height, int p2_x,
 
 /**
  * @brief Recherche la meilleure action à jouer selon l'algorithme Beam Search.
- * * @param current État actuel de notre véhicule.
+ * @param current État actuel de notre véhicule.
  * @param map La grille du circuit.
  * @param width Largeur de la carte.
  * @param height Hauteur de la carte.
