@@ -388,9 +388,6 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
         return emergency_brake;
     }
 
-    /* Affichage optionnel de la profondeur (utile pour le debug) */
-    fprintf(stderr, "    (Profondeur atteinte : %d en %.2f s)\n", depth, elapsed_time);
-
     /* On retourne l'action qui a permis d'atteindre le meilleur etat simule */
     return best_ever.first_action;
 }
@@ -422,9 +419,6 @@ int main() {
 
     fgets(line_buffer, MAX_LINE_LENGTH, stdin);
     sscanf(line_buffer, "%d %d %d", &width, &height, &gasLevel);
-    
-    fprintf(stderr, "=== >Map< ===\n");
-    fprintf(stderr, "Size %d x %d\nGas at start %d \n\n", width, height, gasLevel);
 
     map = (char**)malloc(height * sizeof(char*));
     for (row = 0; row < height; ++row) {
@@ -439,8 +433,6 @@ int main() {
         heatmap[row] = (int*)malloc(width * sizeof(int));
     }
     buildHeatmap(map, width, height, heatmap);
-
-    fprintf(stderr, "\n=== Race start ===\n");
     
     my_car.vx = 0;
     my_car.vy = 0;
@@ -454,9 +446,6 @@ int main() {
         if (strlen(line_buffer) < 5) break; 
         
         sscanf(line_buffer, "%d %d %d %d %d %d", &myX, &myY, &secondX, &secondY, &thirdX, &thirdY);
-        
-        fprintf(stderr, "=== ROUND %d\n", round);
-        fprintf(stderr, "    Positions: Me(%d,%d)  A(%d,%d), B(%d,%d)\n", myX, myY, secondX, secondY, thirdX, thirdY);
         
         /* --- NOUVEAU : Synchronisation de la vitesse réelle --- */
         if (round > 1) {
@@ -496,9 +485,6 @@ int main() {
 
         fprintf(stdout, "%d %d\n", best_action.ax, best_action.ay);
         fflush(stdout);
-        
-        fprintf(stderr, "    Action: %d %d   Gas remaining: %d\n", best_action.ax, best_action.ay, my_car.gas);
-        fflush(stderr);
     }
 
     for (row = 0; row < height; ++row) {
