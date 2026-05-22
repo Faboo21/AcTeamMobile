@@ -1,3 +1,9 @@
+/**
+ * @file AcTeamMobile.c
+ * @brief Point d'entrée principal du pilote de course.
+ * * Assure la communication avec le Gestionnaire de Course (GDC), la synchronisation
+ * de l'état réel (vitesses déduites) et la boucle d'exécution principale.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +11,12 @@
 #include "logic.h"
 #include "raycasting.h"
 
+/**
+ * @brief Fonction principale du programme.
+ * * Configure la carte, initie le système de Heatmap, puis entre dans la boucle
+ * de compétition gérée par l'entrée standard fournie par le GDC.
+ * * @return EXIT_SUCCESS si l'exécution se termine correctement.
+ */
 int main() {
     int width, height, gasLevel;
     char line_buffer[MAX_LINE_LENGTH];
