@@ -97,48 +97,55 @@ int nextPoint(InfoLine * infoLine, Pos2Dint * point, int direction) {
 /* ========================================================================= */
 
 int calculateGasCost(int ax, int ay, int vx, int vy, char target_terrain) {
-    int gas_cost = (ax * ax) + (ay * ay);
-    
-    /* La véritable formule utilisée par le code C++ du Gestionnaire de Course */
-    gas_cost += (int)(sqrt(vx * vx + vy * vy) * 3.0 / 2.0);
-    
+    /* Le * 1.5 doit se faire APRES la racine carree, comme dans le GDC ! */
+    int gas_cost = (ax * ax) + (ay * ay) + (int)(sqrt(vx * vx + vy * vy) * 1.5);
     if (target_terrain == '~') {
         gas_cost += 1;
     }
-    
     return gas_cost;
 }
 
 void buildHeatmap(char** map, int width, int height, int** heatmap) {
     /* Declaration de TOUTES les variables en haut (Norme C90) */
     int x, y, i, nx, ny, cost;
+    int queue_size = width * height;
     Point* queue;
+    char** in_queue; /* NOUVEAU : Tableau pour savoir si une case est déjà dans la file */
     int head = 0, tail = 0;
     int dx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
     int dy[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
     Point p;
 
+    queue = (Point*)malloc(queue_size * sizeof(Point));
+    in_queue = (char**)malloc(height * sizeof(char*));
+
+    /* Initialisation de la heatmap et du tableau in_queue */
     for (y = 0; y < height; y++) {
+        in_queue[y] = (char*)calloc(width, sizeof(char)); /* calloc met tout à 0 (faux) */
         for (x = 0; x < width; x++) {
             heatmap[y][x] = INF;
         }
     }
 
-    queue = (Point*)malloc(width * height * sizeof(Point));
-
+    /* Trouver la ligne d'arrivée */
     for (y = 0; y < height; y++) {
         for (x = 0; x < width; x++) {
             if (map[y][x] == '=') {
                 heatmap[y][x] = 0;
-                queue[tail].x = x;
-                queue[tail].y = y;
+                /* NOUVEAU : utilisation du modulo (%) pour faire une file circulaire */
+                queue[tail % queue_size].x = x;
+                queue[tail % queue_size].y = y;
                 tail++;
+                in_queue[y][x] = 1; /* La case est maintenant dans la file */
             }
         }
     }
 
+    /* Parcours de la carte */
     while (head < tail) {
-        p = queue[head++];
+        p = queue[head % queue_size];
+        head++;
+        in_queue[p.y][p.x] = 0; /* NOUVEAU : La case sort de la file, on la marque à 0 */
 
         for (i = 0; i < 8; i++) {
             nx = p.x + dx[i];
@@ -152,13 +159,24 @@ void buildHeatmap(char** map, int width, int height, int** heatmap) {
 
             if (heatmap[p.y][p.x] + cost < heatmap[ny][nx]) {
                 heatmap[ny][nx] = heatmap[p.y][p.x] + cost;
-                queue[tail].x = nx;
-                queue[tail].y = ny;
-                tail++;
+                
+                /* NOUVEAU : On ajoute à la file UNIQUEMENT si elle n'y est pas déjà */
+                if (in_queue[ny][nx] == 0) {
+                    queue[tail % queue_size].x = nx;
+                    queue[tail % queue_size].y = ny;
+                    tail++;
+                    in_queue[ny][nx] = 1; /* On indique qu'elle est dans la file */
+                }
             }
         }
     }
+
+    /* Nettoyage de la mémoire */
     free(queue);
+    for (y = 0; y < height; y++) {
+        free(in_queue[y]);
+    }
+    free(in_queue);
 }
 
 int getValidMoves(CarState current, char** map, int width, int height, 
