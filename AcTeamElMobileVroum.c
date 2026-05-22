@@ -7,8 +7,9 @@
 #define MAX_LINE_LENGTH 1024
 #define BOOSTS_AT_START 5
 #define INF 999999
-#define BEAM_WIDTH 200
-#define MAX_DEPTH 200
+#define BEAM_WIDTH 300
+#define MAX_DEPTH 300
+#define MAX_THINKING_TIME 0.50
 
 /* ========================================================================= */
 /* 1. STRUCTURES DE DONNEES                                                  */
@@ -289,7 +290,7 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
         /* --- SECURITE TEMPORELLE --- */
         elapsed_time = ((double)(clock() - start_time)) / CLOCKS_PER_SEC;
         /* Si on a reflechi pendant plus de 0.85 seconde, on arrete tout ! */
-        if (elapsed_time > 0.85) {
+        if (elapsed_time > MAX_THINKING_TIME) {
             break; 
         }
 
