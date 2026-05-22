@@ -256,6 +256,7 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
     int gas_weight;
     int min_gas_needed;
     int extra_gas;
+    int safe_gas_needed;
     Action actions[25];
     CarState next_states[25];
     Action normal_actions[9];
@@ -317,23 +318,30 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
                     candidate.first_action = current_beam[i].first_action;
                 }
 
-                /* --- HEURISTIQUE UNIVERSELLE CORRIGEE --- */
+                /* --- HEURISTIQUE UNIVERSELLE AVEC ECO-CONDUITE ADAPTATIVE --- */
                 
-                /* 1. Calcul du minimum vital : 1 case coute au minimum 1 unite d'essence */
+                /* 1. Calcul du minimum vital theorique */
                 min_gas_needed = heatmap[candidate.y][candidate.x] / 100;
+                
+                /* 2. Marge adaptative : 20% de la distance restante (division par 5) */
+                /* Plus on se rapproche du but, plus la marge se reduit d'elle-meme. */
+                safe_gas_needed = min_gas_needed + (min_gas_needed / 4);
 
-                /* 2. Survie absolue : on tue les futurs impossibles (malus massif) */
+                /* 3. Survie absolue (on tape dans le vrai minimum) */
                 if (candidate.gas < min_gas_needed) {
                     candidate.score = 500000 + heatmap[candidate.y][candidate.x];
                 } else {
-                    /* 3. Poids dynamique proportionnel au coussin de securite */
-                    if (candidate.gas >= min_gas_needed * 2) {
+                    /* 4. Gestion dynamique du poids de l'essence */
+                    if (candidate.gas >= safe_gas_needed * 2) {
                         gas_weight = 1;
+                    } else if (candidate.gas < safe_gas_needed) {
+                        /* On a entame la reserve adaptative : on passe en eco-conduite */
+                        gas_weight = 150; 
                     } else {
-                        buffer = min_gas_needed; 
+                        buffer = safe_gas_needed; 
                         if (buffer == 0) buffer = 1; 
                         
-                        extra_gas = candidate.gas - min_gas_needed;
+                        extra_gas = candidate.gas - safe_gas_needed;
                         if (extra_gas < 0) extra_gas = 0;
                         
                         gas_weight = 50 - ((extra_gas * 49) / buffer);
@@ -342,7 +350,7 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
                         if (gas_weight > 50) gas_weight = 50;
                     }
 
-                    /* 4. Score final = Distance restante + (Consommation * Poids) */
+                    /* 5. Score final */
                     candidate.score = heatmap[candidate.y][candidate.x] + ((current.gas - candidate.gas) * gas_weight);
                 }
                 
