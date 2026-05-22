@@ -205,7 +205,9 @@ int getValidMoves(CarState current, char** map, int width, int height,
             speed_sq = nvx * nvx + nvy * nvy;
             target_terrain = map[ny][nx];
             
-            if (target_terrain == '~' && speed_sq > 1) continue;
+            /* --- CORRECTION SABLE 1 : Vérifier la case actuelle --- */
+            if ((map[current.y][current.x] == '~' || target_terrain == '~') && speed_sq > 1) continue;
+            
             if (speed_sq > 25) continue;
 
             gas_cost = calculateGasCost(ax, ay, current.vx, current.vy, target_terrain);
@@ -219,6 +221,8 @@ int getValidMoves(CarState current, char** map, int width, int height,
                 if (p.x < 0 || p.x >= width || p.y < 0 || p.y >= height) { collision = 1; break; }
                 if (map[p.y][p.x] == '.') { collision = 1; break; }
                 if ((p.x == p2_x && p.y == p2_y) || (p.x == p3_x && p.y == p3_y)) { collision = 1; break; }
+                /* --- CORRECTION SABLE 2 : Vérifier les cases traversées --- */
+                if (map[p.y][p.x] == '~' && speed_sq > 1) { collision = 1; break; }
             }
 
             if (collision) continue;
@@ -242,7 +246,7 @@ int compareStates(const void* a, const void* b) {
     return ((CarState*)a)->score - ((CarState*)b)->score;
 }
 Action getBestAction(CarState current, char** map, int width, int height, int** heatmap, int p2x, int p2y, int p3x, int p3y) {
-    /* Declaration de TOUTES les variables en haut */
+    /* --- DECLARATION DE TOUTES LES VARIABLES (NORME C90) --- */
     CarState current_beam[BEAM_WIDTH];
     int current_beam_size = 1;
     CarState next_beam[BEAM_WIDTH * 25]; 
@@ -259,23 +263,31 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
     CarState candidate;
     Action emergency_brake;
     
-    /* --- VARIABLES POUR LE CHRONOMETRE --- */
+    /* Variables pour le "baroud d'honneur" et la memoire du meilleur etat */
+    CarState best_ever;
+    int best_ever_heatmap;
+    int cand_hm;
+    int buffer;
+    
+    /* Variables pour le chronometre */
     clock_t start_time;
     double elapsed_time;
 
-    /* Demarrage du chronometre */
+    /* --- INITIALISATION --- */
     start_time = clock();
 
     current_beam[0] = current;
     current_beam[0].score = heatmap[current.y][current.x];
+    
+    best_ever = current;
+    best_ever_heatmap = heatmap[current.y][current.x];
 
-    /* On met une profondeur theorique tres grande (ex: 15) */
+    /* On met une profondeur theorique tres grande (ex: 200) */
     for (depth = 0; depth < MAX_DEPTH; depth++) {
         
         /* --- SECURITE TEMPORELLE --- */
         elapsed_time = ((double)(clock() - start_time)) / CLOCKS_PER_SEC;
         /* Si on a reflechi pendant plus de 0.85 seconde, on arrete tout ! */
-        /* Cela laisse 150 millisecondes de marge pour envoyer la reponse. */
         if (elapsed_time > 0.85) {
             break; 
         }
@@ -307,26 +319,23 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
 
                 /* --- HEURISTIQUE UNIVERSELLE CORRIGEE --- */
                 
-                /* 1. Calcul du minimum vital : 1 case coûte au minimum 1 unité d'essence */
+                /* 1. Calcul du minimum vital : 1 case coute au minimum 1 unite d'essence */
                 min_gas_needed = heatmap[candidate.y][candidate.x] / 100;
 
                 /* 2. Survie absolue : on tue les futurs impossibles (malus massif) */
                 if (candidate.gas < min_gas_needed) {
                     candidate.score = 500000 + heatmap[candidate.y][candidate.x];
                 } else {
-                    /* 3. Poids dynamique proportionnel au coussin de sécurité */
-                    /* Si on a plus du double du minimum, on fonce (poids = 1) */
+                    /* 3. Poids dynamique proportionnel au coussin de securite */
                     if (candidate.gas >= min_gas_needed * 2) {
                         gas_weight = 1;
                     } else {
-                        /* La marge de sécurité entre le min et le double du min */
-                        int buffer = min_gas_needed; 
+                        buffer = min_gas_needed; 
                         if (buffer == 0) buffer = 1; 
                         
                         extra_gas = candidate.gas - min_gas_needed;
                         if (extra_gas < 0) extra_gas = 0;
                         
-                        /* Le poids monte de 1 à 50 selon l'urgence */
                         gas_weight = 50 - ((extra_gas * 49) / buffer);
                         
                         if (gas_weight < 1) gas_weight = 1;
@@ -335,6 +344,13 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
 
                     /* 4. Score final = Distance restante + (Consommation * Poids) */
                     candidate.score = heatmap[candidate.y][candidate.x] + ((current.gas - candidate.gas) * gas_weight);
+                }
+                
+                /* --- NOUVEAU : Sauvegarde du record de distance (Baroud d'honneur) --- */
+                cand_hm = heatmap[candidate.y][candidate.x];
+                if (cand_hm < best_ever_heatmap || (cand_hm == best_ever_heatmap && candidate.score < best_ever.score)) {
+                    best_ever = candidate;
+                    best_ever_heatmap = cand_hm;
                 }
                 
                 next_beam[next_beam_size++] = candidate;
@@ -363,10 +379,11 @@ Action getBestAction(CarState current, char** map, int width, int height, int** 
         return emergency_brake;
     }
 
-    /* Optionnel : tu peux afficher la profondeur atteinte pour analyser tes performances */
+    /* Affichage optionnel de la profondeur (utile pour le debug) */
     fprintf(stderr, "    (Profondeur atteinte : %d en %.2f s)\n", depth, elapsed_time);
 
-    return current_beam[0].first_action;
+    /* On retourne l'action qui a permis d'atteindre le meilleur etat simule */
+    return best_ever.first_action;
 }
 
 /* ========================================================================= */
@@ -386,6 +403,13 @@ int main() {
     Action best_action;
     int target_nx, target_ny;
     char target_terrain;
+    
+    /* NOUVEAU : Variables pour stocker la position précédente */
+    int prev_x = -1;
+    int prev_y = -1;
+
+    prev_x = -1;
+    prev_y = -1;
 
     fgets(line_buffer, MAX_LINE_LENGTH, stdin);
     sscanf(line_buffer, "%d %d %d", &width, &height, &gasLevel);
@@ -425,8 +449,23 @@ int main() {
         fprintf(stderr, "=== ROUND %d\n", round);
         fprintf(stderr, "    Positions: Me(%d,%d)  A(%d,%d), B(%d,%d)\n", myX, myY, secondX, secondY, thirdX, thirdY);
         
+        /* --- NOUVEAU : Synchronisation de la vitesse réelle --- */
+        if (round > 1) {
+            my_car.vx = myX - prev_x;
+            my_car.vy = myY - prev_y;
+        } else {
+            /* Au premier tour, on est obligatoirement à l'arrêt */
+            my_car.vx = 0;
+            my_car.vy = 0;
+        }
+        
         my_car.x = myX;
         my_car.y = myY;
+
+        /* On sauvegarde la position actuelle pour le calcul du tour suivant */
+        prev_x = myX;
+        prev_y = myY;
+        /* ------------------------------------------------------ */
 
         best_action = getBestAction(my_car, map, width, height, heatmap, secondX, secondY, thirdX, thirdY);
 
